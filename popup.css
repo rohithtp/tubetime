@@ -30,11 +30,11 @@
   
   --md-on-surface: #1C1B1F;
   --md-on-surface-variant: #49454F;
-  --md-outline: #79747E;
+  --md-outline: #49454F;
   --md-outline-variant: #CAC4D0;
   
   /* Gamification Colors */
-  --md-gold: #FFD700;
+  --md-gold: #FFC107;
   --md-gold-container: #FFF8E1;
   --md-bronze: #CD7F32;
   --md-silver: #C0C0C0;
@@ -179,6 +179,38 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--md-spacing-4);
+}
+
+/* Content Density Optimization */
+@media (max-width: 768px) {
+  .main-content {
+    gap: var(--md-spacing-3);
+  }
+  
+  .card {
+    margin-bottom: var(--md-spacing-2);
+  }
+  
+  .session-info {
+    margin-bottom: var(--md-spacing-3);
+  }
+  
+  .info-row {
+    padding: var(--md-spacing-1) 0;
+  }
+  
+  .achievement-item {
+    padding: var(--md-spacing-2);
+  }
+  
+  .achievement-icon {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .achievement-icon .material-icons {
+    font-size: 16px;
+  }
 }
 
 /* Material Design Cards */
@@ -735,6 +767,33 @@ body {
   background: transparent;
 }
 
+/* Touch Target Optimization */
+@media (max-width: 768px) {
+  .btn-icon {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+  
+  .btn {
+    min-height: 44px;
+    padding: var(--md-spacing-3) var(--md-spacing-4);
+  }
+  
+  .switch {
+    min-height: 44px;
+  }
+  
+  .achievement-item {
+    min-height: 60px;
+  }
+  
+  .checkbox {
+    width: 24px;
+    height: 24px;
+  }
+}
+
 .btn-icon:hover:not(:disabled) {
   background: rgba(28, 27, 31, 0.08);
   color: var(--md-on-surface);
@@ -961,38 +1020,179 @@ body {
   .container {
     width: 100%;
     border-radius: 0;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  .main-content {
+    padding: var(--md-spacing-3);
+    gap: var(--md-spacing-3);
   }
   
   .stats-grid {
     grid-template-columns: 1fr;
+    gap: var(--md-spacing-3);
   }
   
   .session-actions {
     flex-direction: column;
+    gap: var(--md-spacing-2);
   }
   
-  .main-content {
-    padding: var(--md-spacing-4);
+  .action-buttons {
+    gap: var(--md-spacing-2);
   }
   
   .dialog {
     width: 95%;
     margin: var(--md-spacing-2);
+    max-height: 90vh;
   }
   
   .achievements-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: var(--md-spacing-2);
+  }
+  
+  .level-header {
+    padding: var(--md-spacing-3);
+    flex-direction: column;
+    gap: var(--md-spacing-3);
+    text-align: center;
+  }
+  
+  .xp-info {
+    align-items: center;
+  }
+  
+  .streak-header {
+    padding: var(--md-spacing-3);
+  }
+  
+  .card-content {
+    padding: 0 var(--md-spacing-3) var(--md-spacing-3);
+  }
+  
+  .card-header {
+    padding: var(--md-spacing-3) var(--md-spacing-3) var(--md-spacing-2);
+  }
+}
+
+/* Tablet Optimization */
+@media (min-width: 421px) and (max-width: 768px) {
+  .container {
+    width: 90%;
+    max-width: 500px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .achievements-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .level-header {
+    padding: var(--md-spacing-4);
+  }
+  
+  .xp-bar {
+    width: 100px;
+  }
+}
+
+/* Small Mobile Optimization */
+@media (max-width: 375px) {
+  .container {
+    max-height: 75vh;
+  }
+  
+  .main-content {
+    padding: var(--md-spacing-2);
+    gap: var(--md-spacing-2);
+  }
+  
+  .level-badge {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .level-number {
+    font-size: var(--md-font-size-title-medium);
+  }
+  
+  .level-title {
+    font-size: var(--md-font-size-title-small);
+  }
+  
+  .streak-flame {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .streak-flame .material-icons {
+    font-size: 16px;
+  }
+  
+  .stat-card {
+    padding: var(--md-spacing-3);
+  }
+  
+  .stat-value {
+    font-size: var(--md-font-size-title-small);
+  }
+  
+  .stat-icon {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .stat-icon .material-icons {
+    font-size: 14px;
   }
 }
 
 /* High Contrast Mode */
 @media (prefers-contrast: high) {
   .card {
-    border: 1px solid var(--md-outline);
+    border: 2px solid var(--md-on-surface);
   }
   
   .btn {
-    border: 1px solid currentColor;
+    border: 2px solid currentColor;
+  }
+  
+  .stat-card {
+    border: 2px solid var(--md-on-surface);
+  }
+  
+  .level-card {
+    border: 3px solid var(--md-gold);
+  }
+  
+  .streak-card {
+    border: 3px solid var(--md-fire);
+  }
+  
+  .achievement-item {
+    border: 2px solid var(--md-outline);
+  }
+  
+  .achievement-item.unlocked {
+    border: 3px solid var(--md-gold);
+  }
+  
+  .switch-track {
+    border: 2px solid var(--md-on-surface);
+  }
+  
+  .text-field input {
+    border: 2px solid var(--md-on-surface);
+  }
+  
+  .select-field select {
+    border: 2px solid var(--md-on-surface);
   }
 }
 
