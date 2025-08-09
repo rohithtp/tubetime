@@ -1,0 +1,99 @@
+{
+  "exportDate": "2024-01-15T14:30:25.123Z",
+  "totalTime": 7200000,
+  "sessions": [
+    {
+      "id": 1705312200000,
+      "startTime": 1705312200000,
+      "endTime": 1705315800000,
+      "duration": 3600000,
+      "videos": [
+        {
+          "id": "dQw4w9WgXcQ",
+          "title": "Rick Astley - Never Gonna Give You Up (Official Music Video)",
+          "channel": "Rick Astley",
+          "timestamp": 1705312200000,
+          "duration": 212,
+          "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        },
+        {
+          "id": "9bZkp7q19f0",
+          "title": "PSY - GANGNAM STYLE(강남스타일) M/V",
+          "channel": "officialpsy",
+          "timestamp": 1705314000000,
+          "duration": 252,
+          "url": "https://www.youtube.com/watch?v=9bZkp7q19f0"
+        }
+      ]
+    },
+    {
+      "id": 1705320000000,
+      "startTime": 1705320000000,
+      "endTime": 1705323600000,
+      "duration": 3600000,
+      "videos": [
+        {
+          "id": "kJQP7kiw5Fk",
+          "title": "Luis Fonsi - Despacito ft. Daddy Yankee",
+          "channel": "Luis Fonsi",
+          "timestamp": 1705320000000,
+          "duration": 282,
+          "url": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"
+        },
+        {
+          "id": "ZZ5LpwO-An4",
+          "title": "Ed Sheeran - Shape of You (Official Music Video)",
+          "channel": "Ed Sheeran",
+          "timestamp": 1705321800000,
+          "duration": 235,
+          "url": "https://www.youtube.com/watch?v=ZZ5LpwO-An4"
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "autoTrack": true,
+    "exportFormat": "json",
+    "dailyLimit": 0
+  },
+  "summary": {
+    "totalSessions": 2,
+    "averageSessionLength": 3600000,
+    "totalVideos": 4,
+    "mostWatchedChannels": [
+      {
+        "channel": "Rick Astley",
+        "count": 1
+      },
+      {
+        "channel": "officialpsy",
+        "count": 1
+      },
+      {
+        "channel": "Luis Fonsi",
+        "count": 1
+      },
+      {
+        "channel": "Ed Sheeran",
+        "count": 1
+      }
+    ],
+    "totalWatchTime": {
+      "hours": 2,
+      "minutes": 0,
+      "seconds": 0,
+      "milliseconds": 7200000
+    },
+    "averageVideoLength": {
+      "minutes": 3,
+      "seconds": 45,
+      "milliseconds": 225000
+    }
+  },
+  "metadata": {
+    "extensionVersion": "1.0.0",
+    "exportFormat": "json",
+    "dataVersion": "1.0",
+    "generatedBy": "TubeTime Extension"
+  }
+} 
