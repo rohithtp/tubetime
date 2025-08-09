@@ -46,25 +46,33 @@ async function checkStorageAccess() {
 
 // Handle messages from content script and popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('📨 Received message:', request.action, request);
   try {
     if (!extensionContextValid || !isExtensionContextValid()) {
       extensionContextValid = false;
+      console.error('❌ Extension context invalid');
       sendResponse({ success: false, error: 'Extension context invalid' });
       return;
     }
 
     switch (request.action) {
       case 'startTracking':
+        console.log('🎯 Starting tracking...');
         startTracking().then(() => {
+          console.log('✅ Tracking started successfully');
           sendResponse({ success: true });
         }).catch(error => {
+          console.error('❌ Failed to start tracking:', error);
           sendResponse({ success: false, error: error.message });
         });
         return true; // Keep message channel open for async response
       case 'stopTracking':
+        console.log('🎯 Stopping tracking...');
         stopTracking().then(() => {
+          console.log('✅ Tracking stopped successfully');
           sendResponse({ success: true });
         }).catch(error => {
+          console.error('❌ Failed to stop tracking:', error);
           sendResponse({ success: false, error: error.message });
         });
         return true; // Keep message channel open for async response

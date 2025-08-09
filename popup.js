@@ -96,12 +96,22 @@ const ACHIEVEMENTS = [
 ];
 
 // Initialize popup when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   try {
-    initializePopup();
+    console.log('🚀 Initializing TubeTime popup...');
+    
+    // Set up event listeners first
     setupEventListeners();
-    loadSettings();
-    loadGamificationData();
+    console.log('✅ Event listeners set up');
+    
+    // Initialize popup data
+    await initializePopup();
+    console.log('✅ Popup initialized');
+    
+    // Load settings
+    await loadSettings();
+    console.log('✅ Settings loaded');
+    
   } catch (error) {
     console.error('Error initializing popup:', error);
     // Handle extension context invalidation
@@ -360,9 +370,33 @@ async function saveGamificationData() {
 
 // Set up event listeners
 function setupEventListeners() {
+  console.log('🔧 Setting up event listeners...');
+  
   // Start/Stop tracking buttons
-  document.getElementById('startBtn').addEventListener('click', startTracking);
-  document.getElementById('stopBtn').addEventListener('click', stopTracking);
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  
+  console.log('Found buttons:', { startBtn: !!startBtn, stopBtn: !!stopBtn });
+  
+  if (startBtn) {
+    startBtn.addEventListener('click', (e) => {
+      console.log('🎯 Start button clicked');
+      startTracking();
+    });
+    console.log('✅ Start button listener added');
+  } else {
+    console.error('❌ Start button not found');
+  }
+  
+  if (stopBtn) {
+    stopBtn.addEventListener('click', (e) => {
+      console.log('🎯 Stop button clicked');
+      stopTracking();
+    });
+    console.log('✅ Stop button listener added');
+  } else {
+    console.error('❌ Stop button not found');
+  }
   
   // Refresh button
   document.getElementById('refreshBtn').addEventListener('click', refreshCurrentVideo);
@@ -399,13 +433,16 @@ function setupEventListeners() {
 
 // Start tracking
 async function startTracking() {
+  console.log('🚀 Starting tracking...');
   try {
     // Check if extension context is valid
     if (!chrome.runtime?.id) {
       throw new Error('Extension context invalidated');
     }
     
+    console.log('📤 Sending startTracking message...');
     const response = await chrome.runtime.sendMessage({ action: 'startTracking' });
+    console.log('📥 Received response:', response);
     
     if (response.success) {
       document.getElementById('startBtn').disabled = true;
@@ -434,13 +471,16 @@ async function startTracking() {
 
 // Stop tracking
 async function stopTracking() {
+  console.log('🛑 Stopping tracking...');
   try {
     // Check if extension context is valid
     if (!chrome.runtime?.id) {
       throw new Error('Extension context invalidated');
     }
     
+    console.log('📤 Sending stopTracking message...');
     const response = await chrome.runtime.sendMessage({ action: 'stopTracking' });
+    console.log('📥 Received response:', response);
     
     if (response.success) {
       document.getElementById('startBtn').disabled = false;
