@@ -17,29 +17,65 @@ if (window.tubeTimeInitialized) {
   function isExtensionContextValid() {
     try {
       // Try to access chrome.runtime to check if context is valid
-      return typeof chrome !== 'undefined' && 
-             chrome.runtime && 
-             chrome.runtime.id;
+      const isValid = typeof chrome !== 'undefined' && 
+                     chrome.runtime && 
+                     chrome.runtime.id;
+      
+      if (!isValid) {
+        console.log('🔍 Extension context check failed: chrome.runtime not available');
+      }
+      
+      return isValid;
     } catch (error) {
+      console.log('🔍 Extension context check failed with error:', error.message);
       return false;
     }
   }
 
   // Attempt to recover from invalid context
   function attemptContextRecovery() {
-    if (!extensionContextValid && isExtensionContextValid()) {
+    console.log('🔄 Attempting extension context recovery...');
+    
+    if (isExtensionContextValid()) {
       extensionContextValid = true;
-      console.log('Extension context recovered');
+      console.log('✅ Extension context recovered successfully');
+      
       // Re-setup message listener
-      setupMessageListener();
+      try {
+        setupMessageListener();
+        console.log('✅ Message listener re-established');
+      } catch (error) {
+        console.error('❌ Failed to re-setup message listener:', error);
+      }
+      
       // Re-check auto-tracking
-      checkAutoTracking();
+      try {
+        checkAutoTracking();
+        console.log('✅ Auto-tracking re-checked');
+      } catch (error) {
+        console.error('❌ Failed to re-check auto-tracking:', error);
+      }
+      
+      // Re-extract video info if on YouTube
+      if (window.location.pathname === '/watch') {
+        try {
+          extractVideoInfo();
+          console.log('✅ Video info re-extracted');
+        } catch (error) {
+          console.error('❌ Failed to re-extract video info:', error);
+        }
+      }
+    } else {
+      console.log('❌ Extension context still invalid, will retry later');
+      // Schedule another recovery attempt
+      setTimeout(attemptContextRecovery, 10000);
     }
   }
 
   // Safe wrapper for chrome.runtime.sendMessage
   function safeSendMessage(message) {
-    if (!extensionContextValid || !isExtensionContextValid()) {
+    // Always check context validity before sending
+    if (!isExtensionContextValid()) {
       extensionContextValid = false;
       console.warn('Extension context invalid, skipping message:', message.action);
       return;
@@ -51,13 +87,21 @@ if (window.tubeTimeInitialized) {
           console.warn('Message send error:', chrome.runtime.lastError.message);
           if (chrome.runtime.lastError.message.includes('Extension context invalidated')) {
             extensionContextValid = false;
+            console.log('Extension context invalidated, will attempt recovery');
+            // Schedule recovery attempt
+            setTimeout(attemptContextRecovery, 5000);
           }
+        } else if (response) {
+          console.log('Message sent successfully:', message.action);
         }
       });
     } catch (error) {
       console.warn('Failed to send message:', error);
       if (error.message.includes('Extension context invalidated')) {
         extensionContextValid = false;
+        console.log('Extension context invalidated, will attempt recovery');
+        // Schedule recovery attempt
+        setTimeout(attemptContextRecovery, 5000);
       }
     }
   }
@@ -167,8 +211,13 @@ if (window.tubeTimeInitialized) {
       }, { passive: true });
     });
     
-    // Check for context recovery every 10 seconds
-    setInterval(attemptContextRecovery, 10000);
+      // Check for context recovery every 10 seconds
+  setInterval(() => {
+    if (!extensionContextValid && isExtensionContextValid()) {
+      console.log('🔄 Periodic context check: attempting recovery');
+      attemptContextRecovery();
+    }
+  }, 10000);
   }
 
   // Set up page visibility tracking (simplified)
@@ -226,18 +275,25 @@ if (window.tubeTimeInitialized) {
 
   // Listen for messages from popup
   function setupMessageListener() {
-    if (!extensionContextValid || !isExtensionContextValid()) {
+    console.log('🔧 Setting up message listener...');
+    
+    if (!isExtensionContextValid()) {
+      console.log('❌ Cannot setup message listener: extension context invalid');
       return;
     }
 
     try {
       chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        console.log('📨 Content script received message:', request.action);
+        
         try {
           switch (request.action) {
             case 'getCurrentVideo':
+              console.log('📹 Returning current video info');
               sendResponse({ videoInfo: currentVideoInfo });
               break;
             case 'getPageStatus':
+              console.log('📊 Returning page status');
               sendResponse({ 
                 isActive: isPageActive, 
                 lastActivity: lastActivityTime,
@@ -245,25 +301,35 @@ if (window.tubeTimeInitialized) {
               });
               break;
             case 'refreshVideoInfo':
+              console.log('🔄 Refreshing video info');
               // Force re-extraction of video info
               extractVideoInfo();
               sendResponse({ success: true });
               break;
             case 'checkAutoTracking':
+              console.log('⚙️ Checking auto-tracking settings');
               // Re-check auto-tracking setting
               checkAutoTracking();
               sendResponse({ success: true });
               break;
+            default:
+              console.log('❓ Unknown message action:', request.action);
+              sendResponse({ success: false, error: 'Unknown action' });
+              break;
           }
         } catch (error) {
-          console.error('Error handling message:', error);
+          console.error('❌ Error handling message:', error);
           sendResponse({ success: false, error: error.message });
         }
       });
+      
+      console.log('✅ Message listener setup successfully');
     } catch (error) {
-      console.error('Error setting up message listener:', error);
+      console.error('❌ Error setting up message listener:', error);
       if (error.message.includes('Extension context invalidated')) {
         extensionContextValid = false;
+        console.log('🔄 Extension context invalidated, scheduling recovery');
+        setTimeout(attemptContextRecovery, 5000);
       }
     }
   }
@@ -285,17 +351,45 @@ if (window.tubeTimeInitialized) {
 
   // Initialize content script
   (function() {
-    // TubeTime content script loaded
+    console.log('🚀 Initializing TubeTime content script...');
     
-    // Set up observers and event listeners
-    setupVideoDetection();
-    setupActivityTracking();
-    setupPageVisibilityTracking();
-    setupMessageListener();
-    setupNavigationTracking();
+    // Check extension context first
+    if (!isExtensionContextValid()) {
+      console.log('⚠️ Extension context invalid during initialization, will retry');
+      extensionContextValid = false;
+      setTimeout(attemptContextRecovery, 2000);
+      return;
+    }
     
-    // Check if we should start tracking automatically
-    checkAutoTracking();
+    try {
+      // Set up observers and event listeners
+      setupVideoDetection();
+      console.log('✅ Video detection setup');
+      
+      setupActivityTracking();
+      console.log('✅ Activity tracking setup');
+      
+      setupPageVisibilityTracking();
+      console.log('✅ Page visibility tracking setup');
+      
+      setupMessageListener();
+      console.log('✅ Message listener setup');
+      
+      setupNavigationTracking();
+      console.log('✅ Navigation tracking setup');
+      
+      // Check if we should start tracking automatically
+      checkAutoTracking();
+      console.log('✅ Auto-tracking check complete');
+      
+      console.log('🎉 TubeTime content script initialized successfully');
+    } catch (error) {
+      console.error('❌ Error during content script initialization:', error);
+      if (error.message.includes('Extension context invalidated')) {
+        extensionContextValid = false;
+        setTimeout(attemptContextRecovery, 5000);
+      }
+    }
   })();
   } catch (error) {
     console.error('Error initializing TubeTime content script:', error);
