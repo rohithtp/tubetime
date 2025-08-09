@@ -34,40 +34,6 @@ const ACHIEVEMENTS = [
     icon: 'calendar_today',
     requirement: 7,
     type: 'streak'
-  }
-];
-
-// Gamification data
-let currentXP = 0;
-let currentLevel = 1;
-let dailyStreak = 0;
-let achievements = [];
-
-// Achievement definitions
-const ACHIEVEMENTS = [
-  {
-    id: 'first_session',
-    name: 'First Steps',
-    description: 'Complete your first tracking session',
-    icon: 'play_arrow',
-    requirement: 1,
-    type: 'sessions'
-  },
-  {
-    id: 'hour_master',
-    name: 'Hour Master',
-    description: 'Track 1 hour of YouTube time',
-    icon: 'schedule',
-    requirement: 3600000, // 1 hour in ms
-    type: 'total_time'
-  },
-  {
-    id: 'daily_warrior',
-    name: 'Daily Warrior',
-    description: 'Track YouTube for 7 consecutive days',
-    icon: 'calendar_today',
-    requirement: 7,
-    type: 'streak'
   },
   {
     id: 'weekend_warrior',
@@ -997,91 +963,7 @@ function getNotificationIcon(type) {
   }
 }
 
-// Gamification functions
-async function loadGamificationData() {
-  try {
-    const data = await chrome.storage.local.get(['xp', 'level', 'streak', 'achievements', 'lastActiveDate']);
-    
-    currentXP = data.xp || 0;
-    currentLevel = data.level || 1;
-    dailyStreak = data.streak || 0;
-    achievements = data.achievements || [];
-    
-    updateGamificationUI();
-    renderAchievements();
-    
-  } catch (error) {
-    console.error('Error loading gamification data:', error);
-  }
-}
 
-function updateGamificationUI() {
-  // Update level display
-  document.getElementById('currentLevel').textContent = currentLevel;
-  document.getElementById('levelNumber').textContent = currentLevel;
-  
-  // Calculate XP progress
-  const xpProgress = (currentXP % 1000) / 1000 * 100;
-  
-  // Update XP display
-  document.getElementById('xpDisplay').textContent = `${currentXP} XP`;
-  document.getElementById('xpProgress').style.width = `${xpProgress}%`;
-  document.getElementById('xpToNext').textContent = `${currentXP % 1000} / 1000 XP`;
-  
-  // Update streak display
-  document.getElementById('streakCount').textContent = `${dailyStreak} days`;
-}
-
-function renderAchievements() {
-  const achievementsGrid = document.getElementById('achievementsGrid');
-  achievementsGrid.innerHTML = '';
-  
-  ACHIEVEMENTS.forEach(achievement => {
-    const isUnlocked = achievements.includes(achievement.id);
-    const achievementElement = document.createElement('div');
-    achievementElement.className = `achievement-item ${isUnlocked ? 'unlocked' : 'locked'}`;
-    achievementElement.innerHTML = `
-      <div class="achievement-icon">
-        <span class="material-icons">${achievement.icon}</span>
-      </div>
-      <div class="achievement-name">${achievement.name}</div>
-    `;
-    
-    achievementsGrid.appendChild(achievementElement);
-  });
-}
-
-function awardXP(amount) {
-  currentXP += amount;
-  
-  // Check for level up
-  const newLevel = Math.floor(currentXP / 1000) + 1;
-  if (newLevel > currentLevel) {
-    currentLevel = newLevel;
-    showLevelUpNotification();
-  }
-  
-  updateGamificationUI();
-  saveGamificationData();
-}
-
-function showLevelUpNotification() {
-  showNotification(`🎉 Level Up! You reached Level ${currentLevel}!`, 'success');
-}
-
-async function saveGamificationData() {
-  try {
-    await chrome.storage.local.set({
-      xp: currentXP,
-      level: currentLevel,
-      streak: dailyStreak,
-      achievements: achievements,
-      lastActiveDate: new Date().toDateString()
-    });
-  } catch (error) {
-    console.error('Error saving gamification data:', error);
-  }
-}
 
 // Add notification animations to CSS
 const style = document.createElement('style');

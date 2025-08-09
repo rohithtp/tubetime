@@ -78,6 +78,10 @@ if (window.tubeTimeInitialized) {
     if (!isExtensionContextValid()) {
       extensionContextValid = false;
       console.warn('Extension context invalid, skipping message:', message.action);
+      // Don't schedule recovery for pageActive messages to avoid spam
+      if (message.action !== 'pageActive') {
+        setTimeout(attemptContextRecovery, 5000);
+      }
       return;
     }
 
@@ -353,43 +357,46 @@ if (window.tubeTimeInitialized) {
   (function() {
     console.log('🚀 Initializing TubeTime content script...');
     
-    // Check extension context first
-    if (!isExtensionContextValid()) {
-      console.log('⚠️ Extension context invalid during initialization, will retry');
-      extensionContextValid = false;
-      setTimeout(attemptContextRecovery, 2000);
-      return;
-    }
-    
-    try {
-      // Set up observers and event listeners
-      setupVideoDetection();
-      console.log('✅ Video detection setup');
-      
-      setupActivityTracking();
-      console.log('✅ Activity tracking setup');
-      
-      setupPageVisibilityTracking();
-      console.log('✅ Page visibility tracking setup');
-      
-      setupMessageListener();
-      console.log('✅ Message listener setup');
-      
-      setupNavigationTracking();
-      console.log('✅ Navigation tracking setup');
-      
-      // Check if we should start tracking automatically
-      checkAutoTracking();
-      console.log('✅ Auto-tracking check complete');
-      
-      console.log('🎉 TubeTime content script initialized successfully');
-    } catch (error) {
-      console.error('❌ Error during content script initialization:', error);
-      if (error.message.includes('Extension context invalidated')) {
+    // Wait a bit for the page to fully load
+    setTimeout(() => {
+      // Check extension context first
+      if (!isExtensionContextValid()) {
+        console.log('⚠️ Extension context invalid during initialization, will retry');
         extensionContextValid = false;
-        setTimeout(attemptContextRecovery, 5000);
+        setTimeout(attemptContextRecovery, 2000);
+        return;
       }
-    }
+    
+      try {
+        // Set up observers and event listeners
+        setupVideoDetection();
+        console.log('✅ Video detection setup');
+        
+        setupActivityTracking();
+        console.log('✅ Activity tracking setup');
+        
+        setupPageVisibilityTracking();
+        console.log('✅ Page visibility tracking setup');
+        
+        setupMessageListener();
+        console.log('✅ Message listener setup');
+        
+        setupNavigationTracking();
+        console.log('✅ Navigation tracking setup');
+        
+        // Check if we should start tracking automatically
+        checkAutoTracking();
+        console.log('✅ Auto-tracking check complete');
+        
+        console.log('🎉 TubeTime content script initialized successfully');
+      } catch (error) {
+        console.error('❌ Error during content script initialization:', error);
+        if (error.message.includes('Extension context invalidated')) {
+          extensionContextValid = false;
+          setTimeout(attemptContextRecovery, 5000);
+        }
+      }
+    }, 1000); // Wait 1 second for page to load
   })();
   } catch (error) {
     console.error('Error initializing TubeTime content script:', error);
