@@ -152,7 +152,7 @@ if (window.tubeTimeInitialized) {
     return 0;
   }
 
-  // Set up activity tracking
+  // Set up activity tracking (disabled for manual mode)
   function setupActivityTracking() {
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
     
@@ -166,31 +166,40 @@ if (window.tubeTimeInitialized) {
       }, { passive: true });
     });
     
-    // Check for inactivity every 30 seconds
-    setInterval(checkInactivity, 30000);
+    // DISABLED: Check for inactivity every 30 seconds
+    // setInterval(checkInactivity, 30000);
     
     // Check for context recovery every 10 seconds
     setInterval(attemptContextRecovery, 10000);
   }
 
-  // Check for user inactivity
+  // Check for user inactivity (DISABLED for manual mode)
   function checkInactivity() {
-    const now = Date.now();
-    const inactiveThreshold = 5 * 60 * 1000; // 5 minutes
+    // DISABLED: Manual mode - tracking only stops when user manually stops it
+    // const now = Date.now();
+    // const inactiveThreshold = 5 * 60 * 1000; // 5 minutes
     
-    if (isPageActive && (now - lastActivityTime) > inactiveThreshold) {
-      isPageActive = false;
-      notifyPageInactive();
-    }
+    // if (isPageActive && (now - lastActivityTime) > inactiveThreshold) {
+    //   isPageActive = false;
+    //   notifyPageInactive();
+    // }
   }
 
-  // Set up page visibility tracking
+  // Set up page visibility tracking (disabled for manual mode)
   function setupPageVisibilityTracking() {
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        isPageActive = false;
-        notifyPageInactive();
-      } else {
+      // DISABLED: Manual mode - tracking continues even when tab is not visible
+      // if (document.hidden) {
+      //   isPageActive = false;
+      //   notifyPageInactive();
+      // } else {
+      //   isPageActive = true;
+      //   lastActivityTime = Date.now();
+      //   notifyPageActive();
+      // }
+      
+      // Only update activity time when tab becomes visible again
+      if (!document.hidden) {
         isPageActive = true;
         lastActivityTime = Date.now();
         notifyPageActive();

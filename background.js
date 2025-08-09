@@ -214,10 +214,11 @@ function handlePageActive(data) {
   }
 }
 
-// Handle page becoming inactive
+// Handle page becoming inactive (disabled for manual mode)
 function handlePageInactive() {
-  // Could implement pause/resume functionality here
-  // Page became inactive
+  // DISABLED: Manual mode - tracking continues even when page is inactive
+  // Only manual stop should end tracking
+  // Page became inactive but tracking continues
 }
 
 // Save session to storage
