@@ -31,6 +31,44 @@
     </header>
 
     <main class="main-content">
+      <!-- Level & Progress Section -->
+      <div class="card level-card">
+        <div class="level-header">
+          <div class="level-info">
+            <div class="level-badge">
+              <span class="level-number" id="currentLevel">1</span>
+            </div>
+            <div class="level-details">
+              <h3 class="level-title">Level <span id="levelNumber">1</span></h3>
+              <p class="level-subtitle">YouTube Master</p>
+            </div>
+          </div>
+          <div class="xp-info">
+            <span class="xp-text" id="xpDisplay">0 XP</span>
+            <div class="xp-progress">
+              <div class="xp-bar">
+                <div class="xp-fill" id="xpProgress"></div>
+              </div>
+              <span class="xp-next" id="xpToNext">0 / 1000 XP</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Streak Section -->
+      <div class="card streak-card">
+        <div class="streak-header">
+          <span class="material-icons streak-icon">local_fire_department</span>
+          <div class="streak-info">
+            <h3 class="streak-title">Daily Streak</h3>
+            <p class="streak-count" id="streakCount">0 days</p>
+          </div>
+          <div class="streak-flame" id="streakFlame">
+            <span class="material-icons">whatshot</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Current Session Card -->
       <div class="card session-card">
         <div class="card-header">
@@ -121,6 +159,21 @@
         </div>
       </div>
 
+      <!-- Achievements Section -->
+      <div class="card achievements-card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span class="material-icons">emoji_events</span>
+            Achievements
+          </h2>
+        </div>
+        <div class="card-content">
+          <div class="achievements-grid" id="achievementsGrid">
+            <!-- Achievements will be populated by JavaScript -->
+          </div>
+        </div>
+      </div>
+
       <!-- Action Buttons -->
       <div class="actions-section">
         <div class="action-buttons">
@@ -198,6 +251,17 @@
         <div class="dialog-actions">
           <button class="btn btn-text" id="cancelConfirm">Cancel</button>
           <button class="btn btn-filled btn-error" id="confirmAction">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Achievement Unlocked Toast -->
+    <div class="achievement-toast" id="achievementToast">
+      <div class="achievement-toast-content">
+        <span class="material-icons achievement-icon">emoji_events</span>
+        <div class="achievement-text">
+          <h4 id="achievementTitle">Achievement Unlocked!</h4>
+          <p id="achievementDesc">You've earned a new achievement!</p>
         </div>
       </div>
     </div>

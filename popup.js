@@ -3,12 +3,105 @@
 let sessionTimer = null;
 let sessionStartTime = null;
 
+// Gamification data
+let currentXP = 0;
+let currentLevel = 1;
+let dailyStreak = 0;
+let achievements = [];
+
+// Achievement definitions
+const ACHIEVEMENTS = [
+  {
+    id: 'first_session',
+    name: 'First Steps',
+    description: 'Complete your first tracking session',
+    icon: 'play_arrow',
+    requirement: 1,
+    type: 'sessions'
+  },
+  {
+    id: 'hour_master',
+    name: 'Hour Master',
+    description: 'Track 1 hour of YouTube time',
+    icon: 'schedule',
+    requirement: 3600000, // 1 hour in ms
+    type: 'total_time'
+  },
+  {
+    id: 'daily_warrior',
+    name: 'Daily Warrior',
+    description: 'Track YouTube for 7 consecutive days',
+    icon: 'calendar_today',
+    requirement: 7,
+    type: 'streak'
+  }
+];
+
+// Gamification data
+let currentXP = 0;
+let currentLevel = 1;
+let dailyStreak = 0;
+let achievements = [];
+
+// Achievement definitions
+const ACHIEVEMENTS = [
+  {
+    id: 'first_session',
+    name: 'First Steps',
+    description: 'Complete your first tracking session',
+    icon: 'play_arrow',
+    requirement: 1,
+    type: 'sessions'
+  },
+  {
+    id: 'hour_master',
+    name: 'Hour Master',
+    description: 'Track 1 hour of YouTube time',
+    icon: 'schedule',
+    requirement: 3600000, // 1 hour in ms
+    type: 'total_time'
+  },
+  {
+    id: 'daily_warrior',
+    name: 'Daily Warrior',
+    description: 'Track YouTube for 7 consecutive days',
+    icon: 'calendar_today',
+    requirement: 7,
+    type: 'streak'
+  },
+  {
+    id: 'weekend_warrior',
+    name: 'Weekend Warrior',
+    description: 'Track 5 hours in a single week',
+    icon: 'weekend',
+    requirement: 18000000, // 5 hours in ms
+    type: 'week_time'
+  },
+  {
+    id: 'marathon_runner',
+    name: 'Marathon Runner',
+    description: 'Track 10 hours total',
+    icon: 'directions_run',
+    requirement: 36000000, // 10 hours in ms
+    type: 'total_time'
+  },
+  {
+    id: 'dedicated_viewer',
+    name: 'Dedicated Viewer',
+    description: 'Complete 50 tracking sessions',
+    icon: 'repeat',
+    requirement: 50,
+    type: 'sessions'
+  }
+];
+
 // Initialize popup when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   try {
     initializePopup();
     setupEventListeners();
     loadSettings();
+    loadGamificationData();
   } catch (error) {
     console.error('Error initializing popup:', error);
     // Handle extension context invalidation
@@ -44,11 +137,224 @@ async function initializePopup() {
     // Load auto-tracking setting
     await loadAutoTrackingSetting();
     
+    // Load gamification data
+    await loadGamificationData();
+    
   } catch (error) {
     console.error('Error initializing popup:', error);
     if (error.message.includes('Extension context invalidated')) {
       showNotification('Extension needs to be reloaded', 'error');
     }
+  }
+}
+
+// Load gamification data
+async function loadGamificationData() {
+  try {
+    const data = await chrome.storage.local.get(['xp', 'level', 'streak', 'achievements', 'lastActiveDate']);
+    
+    currentXP = data.xp || 0;
+    currentLevel = data.level || 1;
+    dailyStreak = data.streak || 0;
+    achievements = data.achievements || [];
+    
+    // Check for streak continuation
+    const today = new Date().toDateString();
+    const lastActive = data.lastActiveDate;
+    
+    if (lastActive && lastActive !== today) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toDateString();
+      
+      if (lastActive === yesterdayStr) {
+        // Streak continues
+        dailyStreak++;
+      } else {
+        // Streak broken
+        dailyStreak = 0;
+      }
+    }
+    
+    updateGamificationUI();
+    renderAchievements();
+    
+  } catch (error) {
+    console.error('Error loading gamification data:', error);
+  }
+}
+
+// Update gamification UI
+function updateGamificationUI() {
+  // Update level display
+  document.getElementById('currentLevel').textContent = currentLevel;
+  document.getElementById('levelNumber').textContent = currentLevel;
+  
+  // Calculate XP progress
+  const xpForNextLevel = currentLevel * 1000;
+  const xpProgress = (currentXP % 1000) / 1000 * 100;
+  
+  // Update XP display
+  document.getElementById('xpDisplay').textContent = `${currentXP} XP`;
+  document.getElementById('xpProgress').style.width = `${xpProgress}%`;
+  document.getElementById('xpToNext').textContent = `${currentXP % 1000} / 1000 XP`;
+  
+  // Update streak display
+  document.getElementById('streakCount').textContent = `${dailyStreak} days`;
+  
+  // Update streak flame animation
+  const streakFlame = document.getElementById('streakFlame');
+  if (dailyStreak > 0) {
+    streakFlame.style.animation = 'flame 1.5s infinite';
+  } else {
+    streakFlame.style.animation = 'none';
+  }
+}
+
+// Render achievements
+function renderAchievements() {
+  const achievementsGrid = document.getElementById('achievementsGrid');
+  achievementsGrid.innerHTML = '';
+  
+  ACHIEVEMENTS.forEach(achievement => {
+    const isUnlocked = achievements.includes(achievement.id);
+    const achievementElement = document.createElement('div');
+    achievementElement.className = `achievement-item ${isUnlocked ? 'unlocked' : 'locked'}`;
+    achievementElement.innerHTML = `
+      <div class="achievement-icon">
+        <span class="material-icons">${achievement.icon}</span>
+      </div>
+      <div class="achievement-name">${achievement.name}</div>
+    `;
+    
+    achievementElement.addEventListener('click', () => {
+      showAchievementDetails(achievement, isUnlocked);
+    });
+    
+    achievementsGrid.appendChild(achievementElement);
+  });
+}
+
+// Show achievement details
+function showAchievementDetails(achievement, isUnlocked) {
+  const message = isUnlocked 
+    ? `Achievement Unlocked: ${achievement.name}\n${achievement.description}`
+    : `Achievement: ${achievement.name}\n${achievement.description}\n\nKeep tracking to unlock this achievement!`;
+  
+  showNotification(message, isUnlocked ? 'success' : 'info');
+}
+
+// Award XP
+function awardXP(amount) {
+  currentXP += amount;
+  
+  // Check for level up
+  const newLevel = Math.floor(currentXP / 1000) + 1;
+  if (newLevel > currentLevel) {
+    currentLevel = newLevel;
+    showLevelUpNotification();
+  }
+  
+  updateGamificationUI();
+  saveGamificationData();
+}
+
+// Show level up notification
+function showLevelUpNotification() {
+  const notification = document.createElement('div');
+  notification.className = 'level-up-notification';
+  notification.innerHTML = `
+    <div class="level-up-content">
+      <span class="material-icons">star</span>
+      <div class="level-up-text">
+        <h4>Level Up!</h4>
+        <p>You reached Level ${currentLevel}!</p>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.classList.add('show');
+  }, 100);
+  
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 300);
+  }, 3000);
+}
+
+// Check achievements
+async function checkAchievements(stats) {
+  const newAchievements = [];
+  
+  ACHIEVEMENTS.forEach(achievement => {
+    if (!achievements.includes(achievement.id)) {
+      let unlocked = false;
+      
+      switch (achievement.type) {
+        case 'sessions':
+          unlocked = stats.totalSessions >= achievement.requirement;
+          break;
+        case 'total_time':
+          unlocked = stats.totalTime >= achievement.requirement;
+          break;
+        case 'streak':
+          unlocked = dailyStreak >= achievement.requirement;
+          break;
+        case 'week_time':
+          unlocked = stats.weekTime >= achievement.requirement;
+          break;
+      }
+      
+      if (unlocked) {
+        newAchievements.push(achievement);
+        achievements.push(achievement.id);
+      }
+    }
+  });
+  
+  if (newAchievements.length > 0) {
+    newAchievements.forEach(achievement => {
+      showAchievementUnlocked(achievement);
+    });
+    
+    renderAchievements();
+    saveGamificationData();
+  }
+}
+
+// Show achievement unlocked toast
+function showAchievementUnlocked(achievement) {
+  const toast = document.getElementById('achievementToast');
+  const title = document.getElementById('achievementTitle');
+  const desc = document.getElementById('achievementDesc');
+  
+  title.textContent = achievement.name;
+  desc.textContent = achievement.description;
+  
+  toast.classList.add('show');
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 4000);
+}
+
+// Save gamification data
+async function saveGamificationData() {
+  try {
+    await chrome.storage.local.set({
+      xp: currentXP,
+      level: currentLevel,
+      streak: dailyStreak,
+      achievements: achievements,
+      lastActiveDate: new Date().toDateString()
+    });
+  } catch (error) {
+    console.error('Error saving gamification data:', error);
   }
 }
 
@@ -99,14 +405,23 @@ async function startTracking() {
       throw new Error('Extension context invalidated');
     }
     
-    await chrome.runtime.sendMessage({ action: 'startTracking' });
-    updateTrackingStatus(true);
-    startSessionTimer(Date.now());
+    const response = await chrome.runtime.sendMessage({ action: 'startTracking' });
     
-    // Update button states
-    document.getElementById('startBtn').disabled = true;
-    document.getElementById('stopBtn').disabled = false;
-    
+    if (response.success) {
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('stopBtn').disabled = false;
+      
+      // Start session timer
+      startSessionTimer(Date.now());
+      updateTrackingStatus(true);
+      
+      // Award XP for starting tracking
+      awardXP(10);
+      
+      showNotification('Tracking started!', 'success');
+    } else {
+      showNotification('Failed to start tracking', 'error');
+    }
   } catch (error) {
     console.error('Error starting tracking:', error);
     if (error.message.includes('Extension context invalidated')) {
@@ -125,20 +440,31 @@ async function stopTracking() {
       throw new Error('Extension context invalidated');
     }
     
-    await chrome.runtime.sendMessage({ action: 'stopTracking' });
-    updateTrackingStatus(false);
-    stopSessionTimer();
+    const response = await chrome.runtime.sendMessage({ action: 'stopTracking' });
     
-    // Update button states
-    document.getElementById('startBtn').disabled = false;
-    document.getElementById('stopBtn').disabled = true;
-    
-    // Refresh stats
-    const stats = await chrome.runtime.sendMessage({ action: 'getStats' });
-    updateStats(stats);
-    
-    showNotification('Tracking stopped', 'success');
-    
+    if (response.success) {
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('stopBtn').disabled = true;
+      
+      // Stop session timer
+      stopSessionTimer();
+      updateTrackingStatus(false);
+      
+      // Award XP for completing session
+      const sessionDuration = Date.now() - sessionStartTime;
+      const xpEarned = Math.floor(sessionDuration / 60000); // 1 XP per minute
+      if (xpEarned > 0) {
+        awardXP(xpEarned);
+        showNotification(`Session completed! Earned ${xpEarned} XP`, 'success');
+      }
+      
+      // Check achievements
+      const stats = await chrome.runtime.sendMessage({ action: 'getStats' });
+      checkAchievements(stats);
+      
+    } else {
+      showNotification('Failed to stop tracking', 'error');
+    }
   } catch (error) {
     console.error('Error stopping tracking:', error);
     if (error.message.includes('Extension context invalidated')) {
@@ -160,42 +486,36 @@ async function exportData() {
     document.getElementById('exportBtn').disabled = true;
     document.getElementById('exportBtn').textContent = 'Exporting...';
     
-    const result = await chrome.runtime.sendMessage({ action: 'exportData' });
+    const response = await chrome.runtime.sendMessage({ action: 'exportData' });
     
-    if (result.success) {
-      if (result.data) {
-        // Fallback: show data in a modal or copy to clipboard
-        showNotification('Data prepared for export. Check console for data.', 'success');
-        
-        // Copy to clipboard if possible
-        try {
-          await navigator.clipboard.writeText(result.data);
-          showNotification('Data copied to clipboard!', 'success');
-        } catch (clipboardError) {
-          // Clipboard copy failed
-        }
-      } else {
-        showNotification('Data exported successfully! Check your downloads folder.', 'success');
+    if (response.success) {
+      if (response.data) {
+        // Create and download file
+        const blob = new Blob([response.data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = response.filename || 'tubetime-export.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }
+      showNotification('Data exported successfully!', 'success');
     } else {
-      const errorMessage = result.error || 'Unknown error occurred';
-      console.error('Export failed:', errorMessage);
-      showNotification(`Failed to export data: ${errorMessage}`, 'error');
+      showNotification('Failed to export data', 'error');
     }
-    
   } catch (error) {
     console.error('Error exporting data:', error);
     if (error.message.includes('Extension context invalidated')) {
       showNotification('Extension needs to be reloaded', 'error');
     } else {
-      showNotification(`Failed to export data: ${error.message}`, 'error');
+      showNotification('Failed to export data', 'error');
     }
   } finally {
     document.getElementById('exportBtn').disabled = false;
     document.getElementById('exportBtn').innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="currentColor"/>
-      </svg>
+      <span class="material-icons">download</span>
       Export Data
     `;
   }
@@ -209,16 +529,27 @@ async function clearData() {
       throw new Error('Extension context invalidated');
     }
     
-    await chrome.runtime.sendMessage({ action: 'clearData' });
-    updateStats({
-      totalTime: 0,
-      todayTime: 0,
-      weekTime: 0,
-      totalSessions: 0,
-      todaySessions: 0,
-      isTracking: false
-    });
-    showNotification('Data cleared successfully', 'success');
+    const response = await chrome.runtime.sendMessage({ action: 'clearData' });
+    
+    if (response.success) {
+      // Reset gamification data
+      currentXP = 0;
+      currentLevel = 1;
+      dailyStreak = 0;
+      achievements = [];
+      
+      updateGamificationUI();
+      renderAchievements();
+      saveGamificationData();
+      
+      showNotification('Data cleared successfully!', 'success');
+      
+      // Refresh stats display
+      const stats = await chrome.runtime.sendMessage({ action: 'getStats' });
+      updateStats(stats);
+    } else {
+      showNotification('Failed to clear data', 'error');
+    }
   } catch (error) {
     console.error('Error clearing data:', error);
     if (error.message.includes('Extension context invalidated')) {
@@ -229,7 +560,7 @@ async function clearData() {
   }
 }
 
-// Update statistics display
+// Update stats display
 function updateStats(stats) {
   document.getElementById('totalTime').textContent = formatTime(stats.totalTime);
   document.getElementById('todayTime').textContent = formatTime(stats.todayTime);
@@ -358,72 +689,52 @@ async function refreshCurrentVideo() {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const tab = tabs[0];
     
-    if (!tab || !tab.url) {
-      showNotification('No active tab found', 'warning');
-      return;
-    }
-    
-    if (tab.url && tab.url.includes('youtube.com')) {
+    if (tab && tab.url && tab.url.includes('youtube.com')) {
       try {
-        // Try to inject content script if not already injected
-        await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          files: ['content.js']
-        });
-      } catch (injectionError) {
-        // Content script might already be injected, which is fine
-      }
-      
-      try {
-        // Send message to content script to force refresh
+        // Send refresh message to content script
         await chrome.tabs.sendMessage(tab.id, { action: 'refreshVideoInfo' });
         
-        // Wait a moment for the content script to process
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Wait a moment for content script to update
+        setTimeout(async () => {
+          try {
+            const response = await chrome.tabs.sendMessage(tab.id, { action: 'getCurrentVideo' });
+            
+            if (response && response.videoInfo) {
+              const videoTitle = document.querySelector('.video-title');
+              videoTitle.textContent = response.videoInfo.title || 'Unknown Video';
+              videoTitle.title = response.videoInfo.title || 'Unknown Video';
+            } else {
+              document.querySelector('.video-title').textContent = 'YouTube page detected';
+            }
+          } catch (messageError) {
+            document.querySelector('.video-title').textContent = 'Not on YouTube';
+          }
+        }, 500);
         
-        // Get updated video info
-        const response = await chrome.tabs.sendMessage(tab.id, { action: 'getCurrentVideo' });
-        
-        if (response && response.videoInfo) {
-          const videoTitle = document.querySelector('.video-title');
-          videoTitle.textContent = response.videoInfo.title || 'Unknown Video';
-          videoTitle.title = response.videoInfo.title || 'Unknown Video';
-          showNotification('Video info refreshed successfully', 'success');
-        } else {
-          showNotification('No video information found', 'warning');
-        }
       } catch (messageError) {
-        // Content script not available or not responding
-        showNotification('YouTube page detected (content script not responding)', 'info');
         document.querySelector('.video-title').textContent = 'YouTube page detected';
       }
     } else {
       document.querySelector('.video-title').textContent = 'Not on YouTube';
-      showNotification('Not on a YouTube page', 'warning');
     }
-    
   } catch (error) {
     console.error('Error refreshing video info:', error);
     if (error.message.includes('Extension context invalidated')) {
-      showNotification('Extension needs to be reloaded', 'error');
-    } else if (error.message.includes('Could not establish connection')) {
-      showNotification('YouTube page detected (connection issue)', 'info');
+      document.querySelector('.video-title').textContent = 'Extension needs reload';
     } else {
-      showNotification('Failed to refresh video info', 'error');
+      document.querySelector('.video-title').textContent = 'Error refreshing video info';
     }
   } finally {
-    // Restore button state
+    // Reset refresh button
     const refreshBtn = document.getElementById('refreshBtn');
     refreshBtn.disabled = false;
     refreshBtn.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="currentColor"/>
-      </svg>
+      <span class="material-icons">refresh</span>
     `;
   }
 }
 
-// Toggle auto tracking mode
+// Toggle auto tracking
 async function toggleAutoTracking() {
   try {
     // Check if extension context is valid
@@ -443,35 +754,23 @@ async function toggleAutoTracking() {
     
     // Show notification
     const mode = isAutoTracking ? 'Automatic' : 'Manual';
-    showNotification(`Tracking mode set to ${mode}`, 'success');
+    showNotification(`Switched to ${mode} mode`, 'success');
     
     // If switching to manual mode and currently tracking, stop tracking
     if (!isAutoTracking && document.getElementById('stopBtn').disabled === false) {
       await stopTracking();
-      showNotification('Tracking stopped (manual mode enabled)', 'info');
     }
     
-    // Notify content script about the setting change
+    // Notify content script about the change
     try {
       const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
       const tab = tabs[0];
       
       if (tab && tab.url && tab.url.includes('youtube.com')) {
-        try {
-          // Try to inject content script if not already injected
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content.js']
-          });
-          
-          // Send message to content script
-          await chrome.tabs.sendMessage(tab.id, { action: 'checkAutoTracking' });
-        } catch (messageError) {
-          // Content script not available or not responding, which is fine
-        }
+        await chrome.tabs.sendMessage(tab.id, { action: 'checkAutoTracking' });
       }
     } catch (error) {
-      // Tab query failed, which is fine
+      // Content script might not be available, which is fine
     }
     
   } catch (error) {
@@ -479,10 +778,10 @@ async function toggleAutoTracking() {
     if (error.message.includes('Extension context invalidated')) {
       showNotification('Extension needs to be reloaded', 'error');
     } else {
-      showNotification('Failed to update tracking mode', 'error');
+      showNotification('Failed to update auto tracking setting', 'error');
     }
     
-    // Revert toggle state on error
+    // Revert toggle state
     const autoTrackToggle = document.getElementById('autoTrackToggle');
     autoTrackToggle.checked = !autoTrackToggle.checked;
   }
@@ -500,20 +799,21 @@ async function loadAutoTrackingSetting() {
     const settings = data.settings || {};
     const autoTrackToggle = document.getElementById('autoTrackToggle');
     
-    // Set toggle state based on stored setting (default to true)
+    // Set toggle state (default to true if not set)
     autoTrackToggle.checked = settings.autoTrack !== false;
     
   } catch (error) {
     console.error('Error loading auto tracking setting:', error);
     if (error.message.includes('Extension context invalidated')) {
       showNotification('Extension needs to be reloaded', 'error');
+    } else {
+      // Set default value
+      document.getElementById('autoTrackToggle').checked = true;
     }
-    // Default to auto tracking enabled
-    document.getElementById('autoTrackToggle').checked = true;
   }
 }
 
-// Format time in HH:MM:SS
+// Format time with precision
 function formatTime(milliseconds) {
   const totalSeconds = Math.floor(milliseconds / 1000);
   const hours = Math.floor(totalSeconds / 3600);
@@ -622,50 +922,125 @@ function showNotification(message, type = 'info') {
   // Create notification element
   const notification = document.createElement('div');
   notification.className = `notification notification-${type}`;
-  notification.textContent = message;
-  
-  // Style the notification
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 12px 16px;
-    border-radius: 6px;
-    color: white;
-    font-weight: 500;
-    z-index: 10000;
-    animation: slideIn 0.3s ease;
-    max-width: 300px;
+  notification.innerHTML = `
+    <div class="notification-content">
+      <span class="material-icons notification-icon">${getNotificationIcon(type)}</span>
+      <span class="notification-text">${message}</span>
+    </div>
   `;
-  
-  // Set background color based on type
-  switch (type) {
-    case 'success':
-      notification.style.background = '#28a745';
-      break;
-    case 'error':
-      notification.style.background = '#dc3545';
-      break;
-    case 'warning':
-      notification.style.background = '#ffc107';
-      notification.style.color = '#212529';
-      break;
-    default:
-      notification.style.background = '#17a2b8';
-  }
   
   // Add to page
   document.body.appendChild(notification);
   
-  // Remove after 3 seconds
+  // Show notification
   setTimeout(() => {
-    notification.style.animation = 'slideOut 0.3s ease';
+    notification.classList.add('show');
+  }, 100);
+  
+  // Hide and remove after delay
+  setTimeout(() => {
+    notification.classList.remove('show');
     setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
+      if (document.body.contains(notification)) {
+        document.body.removeChild(notification);
       }
     }, 300);
-  }, 3000);
+  }, 4000);
+}
+
+function getNotificationIcon(type) {
+  switch (type) {
+    case 'success': return 'check_circle';
+    case 'error': return 'error';
+    case 'warning': return 'warning';
+    default: return 'info';
+  }
+}
+
+// Gamification functions
+async function loadGamificationData() {
+  try {
+    const data = await chrome.storage.local.get(['xp', 'level', 'streak', 'achievements', 'lastActiveDate']);
+    
+    currentXP = data.xp || 0;
+    currentLevel = data.level || 1;
+    dailyStreak = data.streak || 0;
+    achievements = data.achievements || [];
+    
+    updateGamificationUI();
+    renderAchievements();
+    
+  } catch (error) {
+    console.error('Error loading gamification data:', error);
+  }
+}
+
+function updateGamificationUI() {
+  // Update level display
+  document.getElementById('currentLevel').textContent = currentLevel;
+  document.getElementById('levelNumber').textContent = currentLevel;
+  
+  // Calculate XP progress
+  const xpProgress = (currentXP % 1000) / 1000 * 100;
+  
+  // Update XP display
+  document.getElementById('xpDisplay').textContent = `${currentXP} XP`;
+  document.getElementById('xpProgress').style.width = `${xpProgress}%`;
+  document.getElementById('xpToNext').textContent = `${currentXP % 1000} / 1000 XP`;
+  
+  // Update streak display
+  document.getElementById('streakCount').textContent = `${dailyStreak} days`;
+}
+
+function renderAchievements() {
+  const achievementsGrid = document.getElementById('achievementsGrid');
+  achievementsGrid.innerHTML = '';
+  
+  ACHIEVEMENTS.forEach(achievement => {
+    const isUnlocked = achievements.includes(achievement.id);
+    const achievementElement = document.createElement('div');
+    achievementElement.className = `achievement-item ${isUnlocked ? 'unlocked' : 'locked'}`;
+    achievementElement.innerHTML = `
+      <div class="achievement-icon">
+        <span class="material-icons">${achievement.icon}</span>
+      </div>
+      <div class="achievement-name">${achievement.name}</div>
+    `;
+    
+    achievementsGrid.appendChild(achievementElement);
+  });
+}
+
+function awardXP(amount) {
+  currentXP += amount;
+  
+  // Check for level up
+  const newLevel = Math.floor(currentXP / 1000) + 1;
+  if (newLevel > currentLevel) {
+    currentLevel = newLevel;
+    showLevelUpNotification();
+  }
+  
+  updateGamificationUI();
+  saveGamificationData();
+}
+
+function showLevelUpNotification() {
+  showNotification(`🎉 Level Up! You reached Level ${currentLevel}!`, 'success');
+}
+
+async function saveGamificationData() {
+  try {
+    await chrome.storage.local.set({
+      xp: currentXP,
+      level: currentLevel,
+      streak: dailyStreak,
+      achievements: achievements,
+      lastActiveDate: new Date().toDateString()
+    });
+  } catch (error) {
+    console.error('Error saving gamification data:', error);
+  }
 }
 
 // Add notification animations to CSS
