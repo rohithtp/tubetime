@@ -277,7 +277,7 @@ function stopSessionTimer() {
     clearInterval(sessionTimer);
     sessionTimer = null;
   }
-  document.getElementById('sessionTime').textContent = '00:00:00';
+  document.getElementById('sessionTime').textContent = '0m';
 }
 
 // Update current video display
@@ -518,9 +518,13 @@ function formatTime(milliseconds) {
   const totalSeconds = Math.floor(milliseconds / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
   
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  // Simple format: show hours and minutes only
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  } else {
+    return `${minutes}m`;
+  }
 }
 
 // Settings functions
