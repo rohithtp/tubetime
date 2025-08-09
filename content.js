@@ -11,6 +11,7 @@ if (window.tubeTimeInitialized) {
   let currentVideoInfo = null;
   let isPageActive = true;
   let lastActivityTime = Date.now();
+  let lastPageActiveTime = 0; // Track last pageActive message time
   let extensionContextValid = true;
 
   // Check if extension context is still valid
@@ -210,18 +211,21 @@ if (window.tubeTimeInitialized) {
         lastActivityTime = Date.now();
         if (!isPageActive) {
           isPageActive = true;
-          notifyPageActive();
+          // Only notify if context is valid
+          if (isExtensionContextValid()) {
+            notifyPageActive();
+          }
         }
       }, { passive: true });
     });
     
-      // Check for context recovery every 10 seconds
-  setInterval(() => {
-    if (!extensionContextValid && isExtensionContextValid()) {
-      console.log('🔄 Periodic context check: attempting recovery');
-      attemptContextRecovery();
-    }
-  }, 10000);
+    // Check for context recovery every 30 seconds (less frequent)
+    setInterval(() => {
+      if (!extensionContextValid && isExtensionContextValid()) {
+        console.log('🔄 Periodic context check: attempting recovery');
+        attemptContextRecovery();
+      }
+    }, 30000);
   }
 
   // Set up page visibility tracking (simplified)
@@ -231,13 +235,27 @@ if (window.tubeTimeInitialized) {
       if (!document.hidden) {
         isPageActive = true;
         lastActivityTime = Date.now();
-        notifyPageActive();
+        // Only notify if context is valid
+        if (isExtensionContextValid()) {
+          notifyPageActive();
+        }
       }
     });
   }
 
   // Notify background script that page is active
   function notifyPageActive() {
+    // Only send pageActive messages if context is valid and we have video info
+    if (!isExtensionContextValid()) {
+      return; // Skip silently to avoid spam
+    }
+    
+    // Throttle pageActive messages to avoid overwhelming the background script
+    if (lastPageActiveTime && Date.now() - lastPageActiveTime < 5000) {
+      return; // Don't send more than once every 5 seconds
+    }
+    
+    lastPageActiveTime = Date.now();
     safeSendMessage({
       action: 'pageActive',
       data: { 
@@ -357,13 +375,13 @@ if (window.tubeTimeInitialized) {
   (function() {
     console.log('🚀 Initializing TubeTime content script...');
     
-    // Wait a bit for the page to fully load
-    setTimeout(() => {
+    // Function to attempt initialization
+    function attemptInitialization() {
       // Check extension context first
       if (!isExtensionContextValid()) {
         console.log('⚠️ Extension context invalid during initialization, will retry');
         extensionContextValid = false;
-        setTimeout(attemptContextRecovery, 2000);
+        setTimeout(attemptInitialization, 2000);
         return;
       }
     
@@ -396,7 +414,10 @@ if (window.tubeTimeInitialized) {
           setTimeout(attemptContextRecovery, 5000);
         }
       }
-    }, 1000); // Wait 1 second for page to load
+    }
+    
+    // Start initialization after a short delay
+    setTimeout(attemptInitialization, 1000);
   })();
   } catch (error) {
     console.error('Error initializing TubeTime content script:', error);
