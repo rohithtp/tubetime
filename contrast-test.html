@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TubeTime Contrast Analysis</title>
+  <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+      font-family: 'Roboto', sans-serif;
+    }
+    
+    .test-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .test-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .test-header h1 {
+      color: #6750A4;
+      margin-bottom: 10px;
+    }
+    
+    .test-header p {
+      color: #666;
+      margin: 0;
+    }
+    
+    .extension-preview {
+      margin: 20px 0;
+      padding: 20px;
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      text-align: center;
+    }
+    
+    .extension-preview h3 {
+      margin: 0 0 20px 0;
+      color: #333;
+    }
+    
+    .manual-test {
+      margin: 20px 0;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    
+    .manual-test h3 {
+      margin: 0 0 15px 0;
+      color: #333;
+    }
+    
+    .color-test {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 15px 0;
+    }
+    
+    .color-sample {
+      padding: 15px;
+      border-radius: 6px;
+      text-align: center;
+      font-weight: 500;
+    }
+    
+    .btn {
+      background: #6750A4;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      margin: 5px;
+    }
+    
+    .btn:hover {
+      background: #5a4a8a;
+    }
+    
+    .results-section {
+      margin: 20px 0;
+      padding: 20px;
+      background: #e8f4fd;
+      border-radius: 8px;
+      border-left: 4px solid #2196F3;
+    }
+    
+    .results-section h3 {
+      margin: 0 0 15px 0;
+      color: #1976D2;
+    }
+    
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    
+    .metric-item {
+      background: white;
+      padding: 10px;
+      border-radius: 4px;
+      text-align: center;
+    }
+    
+    .metric-value {
+      font-size: 18px;
+      font-weight: bold;
+      color: #1976D2;
+    }
+    
+    .metric-label {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <div class="test-header">
+      <h1>🎨 TubeTime Contrast & Display Analysis</h1>
+      <p>Testing color contrast ratios and display port utilization</p>
+    </div>
+    
+    <div class="extension-preview">
+      <h3>Extension Preview</h3>
+      <div class="container" style="width: 400px; margin: 0 auto;">
+        <!-- Material Design App Bar -->
+        <header class="app-bar">
+          <div class="app-bar-content">
+            <div class="app-bar-leading">
+              <div class="app-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+                </svg>
+              </div>
+              <h1 class="app-title">TubeTime</h1>
+            </div>
+            <div class="app-bar-trailing">
+              <div class="status-chip" id="statusIndicator">
+                <span class="status-icon material-icons">fiber_manual_record</span>
+                <span class="status-text">Active</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main class="main-content">
+          <!-- Level & Progress Section -->
+          <div class="card level-card">
+            <div class="level-header">
+              <div class="level-info">
+                <div class="level-badge">
+                  <span class="level-number" id="currentLevel">5</span>
+                </div>
+                <div class="level-details">
+                  <h3 class="level-title">Level 5</h3>
+                  <p class="level-subtitle">YouTube Master</p>
+                </div>
+              </div>
+              <div class="xp-info">
+                <span class="xp-text" id="xpDisplay">4,250 XP</span>
+                <div class="xp-progress">
+                  <div class="xp-bar">
+                    <div class="xp-fill" id="xpProgress" style="width: 25%;"></div>
+                  </div>
+                  <span class="xp-next" id="xpToNext">250 / 1000 XP</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Streak Section -->
+          <div class="card streak-card">
+            <div class="streak-header">
+              <span class="material-icons streak-icon">local_fire_department</span>
+              <div class="streak-info">
+                <h3 class="streak-title">Daily Streak</h3>
+                <p class="streak-count" id="streakCount">7 days</p>
+              </div>
+              <div class="streak-flame" id="streakFlame">
+                <span class="material-icons">whatshot</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Statistics Cards -->
+          <div class="stats-grid">
+            <div class="card stat-card">
+              <div class="stat-content">
+                <span class="stat-value" id="todayTime">2h 15m 30s</span>
+                <span class="stat-label">Today</span>
+              </div>
+              <div class="stat-icon">
+                <span class="material-icons">today</span>
+              </div>
+            </div>
+            
+            <div class="card stat-card">
+              <div class="stat-content">
+                <span class="stat-value" id="weekTime">12h 45m 20s</span>
+                <span class="stat-label">This Week</span>
+              </div>
+              <div class="stat-icon">
+                <span class="material-icons">date_range</span>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+    
+    <div class="manual-test">
+      <h3>Color Contrast Test Samples</h3>
+      <div class="color-test">
+        <div class="color-sample" style="background: #6750A4; color: #FFFFFF;">
+          Primary Text on Primary<br>
+          #FFFFFF on #6750A4
+        </div>
+        <div class="color-sample" style="background: #FFFBFE; color: #1C1B1F;">
+          Primary Text on Surface<br>
+          #1C1B1F on #FFFBFE
+        </div>
+        <div class="color-sample" style="background: #F3F0F4; color: #1C1B1F;">
+          Text on Surface Container<br>
+          #1C1B1F on #F3F0F4
+        </div>
+        <div class="color-sample" style="background: #6750A4; color: #FFD700;">
+          Gold Text on Primary<br>
+          #FFD700 on #6750A4
+        </div>
+        <div class="color-sample" style="background: #BA1A1A; color: #FFFFFF;">
+          Error Text on Error<br>
+          #FFFFFF on #BA1A1A
+        </div>
+        <div class="color-sample" style="background: #FFFBFE; color: #49454F;">
+          Secondary Text on Surface<br>
+          #49454F on #FFFBFE
+        </div>
+      </div>
+    </div>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <button class="btn" onclick="runContrastAnalysis()">🔍 Run Contrast Analysis</button>
+      <button class="btn" onclick="checkDisplayMetrics()">📊 Check Display Metrics</button>
+      <button class="btn" onclick="generateReport()">📋 Generate Full Report</button>
+    </div>
+    
+    <div class="results-section" id="resultsSection" style="display: none;">
+      <h3>📊 Analysis Results</h3>
+      <div class="metric-grid" id="metricsGrid">
+        <!-- Results will be populated here -->
+      </div>
+    </div>
+  </div>
+
+  <script src="contrast-checker.js"></script>
+  <script>
+    function checkDisplayMetrics() {
+      const container = document.querySelector('.container');
+      const containerRect = container.getBoundingClientRect();
+      const viewport = {
+        width: window.innerWidth,
+        height: window.innerHeight
+      };
+
+      const utilization = {
+        width: (containerRect.width / viewport.width * 100).toFixed(1),
+        height: (containerRect.height / viewport.height * 100).toFixed(1),
+        area: ((containerRect.width * containerRect.height) / (viewport.width * viewport.height) * 100).toFixed(1)
+      };
+
+      const resultsSection = document.getElementById('resultsSection');
+      const metricsGrid = document.getElementById('metricsGrid');
+      
+      metricsGrid.innerHTML = `
+        <div class="metric-item">
+          <div class="metric-value">${utilization.width}%</div>
+          <div class="metric-label">Width Utilization</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-value">${utilization.height}%</div>
+          <div class="metric-label">Height Utilization</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-value">${utilization.area}%</div>
+          <div class="metric-label">Area Utilization</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-value">${containerRect.width}×${containerRect.height}</div>
+          <div class="metric-label">Container Size</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-value">${viewport.width}×${viewport.height}</div>
+          <div class="metric-label">Viewport Size</div>
+        </div>
+      `;
+      
+      resultsSection.style.display = 'block';
+    }
+
+    function generateReport() {
+      const checker = new ContrastChecker();
+      const results = checker.runAnalysis();
+      
+      console.log('Full Analysis Results:', results);
+      
+      // Display comprehensive report
+      const report = checker.generateReport();
+      document.body.appendChild(report);
+    }
+
+    // Auto-run basic analysis on load
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        checkDisplayMetrics();
+      }, 1000);
+    });
+  </script>
+</body>
+</html> 
