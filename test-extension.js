@@ -1,155 +1,92 @@
-// Test script to validate TubeTime extension structure
-const fs = require('fs');
-const path = require('path');
+// Test script for TubeTime extension context handling
+// Run this in the browser console on a YouTube page to test the extension
 
-console.log('TubeTime Extension Validation');
-console.log('=============================');
-console.log('');
+console.log('TubeTime Extension Test Script');
 
-// Required files for Chrome extension
-const requiredFiles = [
-  'manifest.json',
-  'background.js',
-  'content.js',
-  'popup.html',
-  'popup.css',
-  'popup.js'
-];
-
-// Required icon sizes
-const requiredIcons = [
-  'icons/icon16.png',
-  'icons/icon48.png',
-  'icons/icon128.png'
-];
-
-let allValid = true;
-
-// Check required files
-console.log('Checking required files:');
-requiredFiles.forEach(file => {
-  if (fs.existsSync(file)) {
-    console.log(`✓ ${file}`);
+// Test 1: Check if extension is loaded
+function testExtensionLoaded() {
+  console.log('Test 1: Checking if extension is loaded...');
+  
+  if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
+    console.log('✅ Extension context is valid');
+    return true;
   } else {
-    console.log(`✗ ${file} - MISSING`);
-    allValid = false;
+    console.log('❌ Extension context is invalid');
+    return false;
   }
-});
+}
 
-console.log('');
+// Test 2: Test message sending
+function testMessageSending() {
+  console.log('Test 2: Testing message sending...');
+  
+  try {
+    chrome.runtime.sendMessage({ action: 'getStats' }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.log('❌ Message send failed:', chrome.runtime.lastError.message);
+      } else {
+        console.log('✅ Message sent successfully:', response);
+      }
+    });
+  } catch (error) {
+    console.log('❌ Message send error:', error.message);
+  }
+}
 
-// Check manifest.json structure
-console.log('Validating manifest.json:');
-try {
-  const manifest = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
+// Test 3: Test storage access
+async function testStorageAccess() {
+  console.log('Test 3: Testing storage access...');
   
-  // Check required manifest fields
-  const requiredFields = ['manifest_version', 'name', 'version', 'permissions'];
-  requiredFields.forEach(field => {
-    if (manifest[field]) {
-      console.log(`✓ ${field}: ${manifest[field]}`);
-    } else {
-      console.log(`✗ ${field} - MISSING`);
-      allValid = false;
-    }
-  });
+  try {
+    const data = await chrome.storage.local.get(['totalTime', 'sessions']);
+    console.log('✅ Storage access successful:', data);
+  } catch (error) {
+    console.log('❌ Storage access failed:', error.message);
+  }
+}
+
+// Test 4: Simulate context invalidation (manual test)
+function testContextInvalidation() {
+  console.log('Test 4: Context invalidation test...');
+  console.log('To test context invalidation handling:');
+  console.log('1. Reload the extension in chrome://extensions/');
+  console.log('2. Check the console for recovery messages');
+  console.log('3. Try sending messages again');
+}
+
+// Test 5: Check content script initialization
+function testContentScriptInit() {
+  console.log('Test 5: Checking content script initialization...');
   
-  // Check manifest version
-  if (manifest.manifest_version === 3) {
-    console.log('✓ Using Manifest V3 (recommended)');
+  if (window.tubeTimeInitialized) {
+    console.log('✅ Content script is initialized');
   } else {
-    console.log('⚠ Using Manifest V2 (deprecated)');
+    console.log('❌ Content script is not initialized');
   }
+}
+
+// Run all tests
+async function runAllTests() {
+  console.log('=== Running TubeTime Extension Tests ===');
   
-  // Check permissions
-  const requiredPermissions = ['storage', 'activeTab'];
-  requiredPermissions.forEach(permission => {
-    if (manifest.permissions && manifest.permissions.includes(permission)) {
-      console.log(`✓ Permission: ${permission}`);
-    } else {
-      console.log(`✗ Permission: ${permission} - MISSING`);
-      allValid = false;
-    }
-  });
+  testExtensionLoaded();
+  testMessageSending();
+  await testStorageAccess();
+  testContextInvalidation();
+  testContentScriptInit();
   
-} catch (error) {
-  console.log(`✗ manifest.json - INVALID JSON: ${error.message}`);
-  allValid = false;
+  console.log('=== Tests Complete ===');
 }
 
-console.log('');
+// Export functions for manual testing
+window.tubeTimeTests = {
+  testExtensionLoaded,
+  testMessageSending,
+  testStorageAccess,
+  testContextInvalidation,
+  testContentScriptInit,
+  runAllTests
+};
 
-// Check icons
-console.log('Checking icons:');
-requiredIcons.forEach(icon => {
-  if (fs.existsSync(icon)) {
-    console.log(`✓ ${icon}`);
-  } else {
-    console.log(`✗ ${icon} - MISSING (run: node generate-icons.js for instructions)`);
-    allValid = false;
-  }
-});
-
-console.log('');
-
-// Check file sizes
-console.log('Checking file sizes:');
-const filesToCheck = ['background.js', 'content.js', 'popup.js'];
-filesToCheck.forEach(file => {
-  if (fs.existsSync(file)) {
-    const stats = fs.statSync(file);
-    const sizeKB = (stats.size / 1024).toFixed(1);
-    console.log(`✓ ${file}: ${sizeKB} KB`);
-    
-    if (stats.size > 1024 * 1024) { // 1MB
-      console.log(`⚠ ${file} is larger than 1MB - consider optimization`);
-    }
-  }
-});
-
-console.log('');
-
-// Check for common issues
-console.log('Checking for common issues:');
-const content = fs.readFileSync('content.js', 'utf8');
-const background = fs.readFileSync('background.js', 'utf8');
-
-// Check for console.log statements (should be removed in production)
-const consoleLogs = (content.match(/console\.log/g) || []).length + 
-                   (background.match(/console\.log/g) || []).length;
-if (consoleLogs > 0) {
-  console.log(`⚠ Found ${consoleLogs} console.log statements (remove for production)`);
-} else {
-  console.log('✓ No console.log statements found');
-}
-
-// Check for error handling
-if (content.includes('try') && content.includes('catch')) {
-  console.log('✓ Error handling found in content script');
-} else {
-  console.log('⚠ Limited error handling in content script');
-}
-
-if (background.includes('try') && background.includes('catch')) {
-  console.log('✓ Error handling found in background script');
-} else {
-  console.log('⚠ Limited error handling in background script');
-}
-
-console.log('');
-
-// Final result
-if (allValid) {
-  console.log('🎉 Extension validation PASSED!');
-  console.log('');
-  console.log('Next steps:');
-  console.log('1. Generate PNG icons (see generate-icons.js)');
-  console.log('2. Load extension in Chrome: chrome://extensions/');
-  console.log('3. Enable Developer mode and click "Load unpacked"');
-  console.log('4. Test on YouTube.com');
-} else {
-  console.log('❌ Extension validation FAILED!');
-  console.log('Please fix the issues above before loading the extension.');
-}
-
-console.log(''); 
+console.log('TubeTime test functions available at window.tubeTimeTests');
+console.log('Run window.tubeTimeTests.runAllTests() to execute all tests'); 

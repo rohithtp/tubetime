@@ -2,14 +2,65 @@
 
 // Prevent multiple initializations
 if (window.tubeTimeInitialized) {
-  console.log('TubeTime already initialized, skipping...');
+  // Already initialized, skipping...
 } else {
-  window.tubeTimeInitialized = true;
+  try {
+    window.tubeTimeInitialized = true;
   
   // Global variables
   let currentVideoInfo = null;
   let isPageActive = true;
   let lastActivityTime = Date.now();
+  let extensionContextValid = true;
+
+  // Check if extension context is still valid
+  function isExtensionContextValid() {
+    try {
+      // Try to access chrome.runtime to check if context is valid
+      return typeof chrome !== 'undefined' && 
+             chrome.runtime && 
+             chrome.runtime.id;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  // Attempt to recover from invalid context
+  function attemptContextRecovery() {
+    if (!extensionContextValid && isExtensionContextValid()) {
+      extensionContextValid = true;
+      console.log('Extension context recovered');
+      // Re-setup message listener
+      setupMessageListener();
+      // Re-check auto-tracking
+      checkAutoTracking();
+    }
+  }
+
+  // Safe wrapper for chrome.runtime.sendMessage
+  function safeSendMessage(message) {
+    if (!extensionContextValid || !isExtensionContextValid()) {
+      extensionContextValid = false;
+      console.warn('Extension context invalid, skipping message:', message.action);
+      return;
+    }
+
+    try {
+      chrome.runtime.sendMessage(message, (response) => {
+        if (chrome.runtime.lastError) {
+          console.warn('Message send error:', chrome.runtime.lastError.message);
+          if (chrome.runtime.lastError.message.includes('Extension context invalidated')) {
+            extensionContextValid = false;
+          }
+        }
+      });
+    } catch (error) {
+      console.warn('Failed to send message:', error);
+      if (error.message.includes('Extension context invalidated')) {
+        extensionContextValid = false;
+      }
+    }
+  }
 
   // Set up video detection using MutationObserver
   function setupVideoDetection() {
@@ -78,7 +129,7 @@ if (window.tubeTimeInitialized) {
         // New video detected
         
         // Notify background script
-        chrome.runtime.sendMessage({
+        safeSendMessage({
           action: 'pageActive',
           data: { videoInfo: videoInfo }
         });
@@ -117,6 +168,9 @@ if (window.tubeTimeInitialized) {
     
     // Check for inactivity every 30 seconds
     setInterval(checkInactivity, 30000);
+    
+    // Check for context recovery every 10 seconds
+    setInterval(attemptContextRecovery, 10000);
   }
 
   // Check for user inactivity
@@ -146,7 +200,7 @@ if (window.tubeTimeInitialized) {
 
   // Notify background script that page is active
   function notifyPageActive() {
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       action: 'pageActive',
       data: { 
         videoInfo: currentVideoInfo,
@@ -157,7 +211,7 @@ if (window.tubeTimeInitialized) {
 
   // Notify background script that page is inactive
   function notifyPageInactive() {
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       action: 'pageInactive',
       data: { isActive: false }
     });
@@ -165,47 +219,84 @@ if (window.tubeTimeInitialized) {
 
   // Check if auto-tracking should be enabled
   async function checkAutoTracking() {
+    if (!extensionContextValid || !isExtensionContextValid()) {
+      return;
+    }
+
     try {
       const data = await chrome.storage.local.get(['settings']);
       const settings = data.settings || {};
       
       if (settings.autoTrack) {
         // Auto-start tracking when YouTube is opened
-        chrome.runtime.sendMessage({ action: 'startTracking' });
+        safeSendMessage({ action: 'startTracking' });
       }
     } catch (error) {
       console.error('Error checking auto-tracking settings:', error);
+      if (error.message.includes('Extension context invalidated')) {
+        extensionContextValid = false;
+      }
     }
   }
 
   // Listen for messages from popup
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    switch (request.action) {
-      case 'getCurrentVideo':
-        sendResponse({ videoInfo: currentVideoInfo });
-        break;
-      case 'getPageStatus':
-        sendResponse({ 
-          isActive: isPageActive, 
-          lastActivity: lastActivityTime,
-          currentVideo: currentVideoInfo 
-        });
-        break;
+  function setupMessageListener() {
+    if (!extensionContextValid || !isExtensionContextValid()) {
+      return;
     }
-  });
+
+    try {
+      chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        try {
+          switch (request.action) {
+            case 'getCurrentVideo':
+              sendResponse({ videoInfo: currentVideoInfo });
+              break;
+            case 'getPageStatus':
+              sendResponse({ 
+                isActive: isPageActive, 
+                lastActivity: lastActivityTime,
+                currentVideo: currentVideoInfo 
+              });
+              break;
+            case 'refreshVideoInfo':
+              // Force re-extraction of video info
+              extractVideoInfo();
+              sendResponse({ success: true });
+              break;
+            case 'checkAutoTracking':
+              // Re-check auto-tracking setting
+              checkAutoTracking();
+              sendResponse({ success: true });
+              break;
+          }
+        } catch (error) {
+          console.error('Error handling message:', error);
+          sendResponse({ success: false, error: error.message });
+        }
+      });
+    } catch (error) {
+      console.error('Error setting up message listener:', error);
+      if (error.message.includes('Extension context invalidated')) {
+        extensionContextValid = false;
+      }
+    }
+  }
 
   // Handle YouTube navigation (SPA)
-  let lastUrl = location.href;
-  new MutationObserver(() => {
-    const url = location.href;
-    if (url !== lastUrl) {
-      lastUrl = url;
-      // YouTube navigation detected
-      
-      // Extract video info after navigation
-      setTimeout(extractVideoInfo, 1000);
-    }
-  }).observe(document, { subtree: true, childList: true });
+  function setupNavigationTracking() {
+    let lastUrl = location.href;
+    new MutationObserver(() => {
+      const url = location.href;
+      if (url !== lastUrl) {
+        lastUrl = url;
+        // YouTube navigation detected
+        
+        // Extract video info after navigation
+        setTimeout(extractVideoInfo, 1000);
+      }
+    }).observe(document, { subtree: true, childList: true });
+  }
 
   // Initialize content script
   (function() {
@@ -215,8 +306,13 @@ if (window.tubeTimeInitialized) {
     setupVideoDetection();
     setupActivityTracking();
     setupPageVisibilityTracking();
+    setupMessageListener();
+    setupNavigationTracking();
     
     // Check if we should start tracking automatically
     checkAutoTracking();
   })();
+  } catch (error) {
+    console.error('Error initializing TubeTime content script:', error);
+  }
 } 

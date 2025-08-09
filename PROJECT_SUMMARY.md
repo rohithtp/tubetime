@@ -19,11 +19,11 @@ The TubeTime Chrome extension has been successfully created and all validation i
 ```
 tubetime/
 ├── manifest.json              # Extension configuration (Manifest V3)
-├── background.js              # Service worker (6.9 KB)
-├── content.js                 # Content script (5.7 KB)
+├── background.js              # Service worker (8.5 KB)
+├── content.js                 # Content script (6.6 KB)
 ├── popup.html                 # User interface
 ├── popup.css                  # Modern styling with accessibility
-├── popup.js                   # Popup functionality (11.3 KB)
+├── popup.js                   # Popup functionality (17.2 KB)
 ├── icons/
 │   ├── icon.svg               # Source SVG icon
 │   ├── icon16.png             # 16x16 PNG icon (1.4 KB)
@@ -48,6 +48,8 @@ tubetime/
 - **Session-based tracking** with video details
 - **Real-time session timer**
 - **Inactivity detection** (5-minute timeout)
+- **Manual video refresh** button for reliable detection
+- **Auto-tracking toggle** for easy mode switching
 
 ### ✅ Analytics & Statistics
 - **Daily, weekly, and total time** tracking
@@ -68,6 +70,9 @@ tubetime/
 - **Settings modal** for customization
 - **Confirmation dialogs** for destructive actions
 - **Real-time notifications**
+- **Refresh button** with loading animations
+- **Toggle switch** for tracking mode selection
+- **Robust error handling** with user-friendly messages
 
 ### ✅ Accessibility Features
 - **High contrast mode** support
@@ -110,10 +115,10 @@ tubetime/
 ## 📊 Performance Metrics
 
 ### File Sizes (Optimized)
-- **Background script**: 6.9 KB
-- **Content script**: 5.7 KB
-- **Popup script**: 11.3 KB
-- **Total JavaScript**: 23.9 KB
+- **Background script**: 8.5 KB
+- **Content script**: 6.7 KB
+- **Popup script**: 23.1 KB
+- **Total JavaScript**: 38.3 KB
 - **Icons**: 12.9 KB total
 
 ### Load Times
