@@ -239,18 +239,18 @@ function updateStats(stats) {
 
 // Update tracking status
 function updateTrackingStatus(isTracking) {
-  const statusDot = document.querySelector('.status-dot');
+  const statusIcon = document.querySelector('.status-icon');
   const statusText = document.querySelector('.status-text');
   const startBtn = document.getElementById('startBtn');
   const stopBtn = document.getElementById('stopBtn');
   
   if (isTracking) {
-    statusDot.classList.add('active');
+    statusIcon.classList.add('active');
     statusText.textContent = 'Active';
     startBtn.disabled = true;
     stopBtn.disabled = false;
   } else {
-    statusDot.classList.remove('active');
+    statusIcon.classList.remove('active');
     statusText.textContent = 'Inactive';
     startBtn.disabled = false;
     stopBtn.disabled = true;
